@@ -4637,7 +4637,9 @@ async fn steer_input_requires_active_turn() {
     }];
 
     let err = sess
-        .steer_input(input, /*expected_turn_id*/ None, /*client_metadata*/ None)
+        .steer_input(
+            input, /*expected_turn_id*/ None, /*client_metadata*/ None,
+        )
         .await
         .expect_err("steering without active turn should fail");
 
@@ -4666,7 +4668,11 @@ async fn steer_input_enforces_expected_turn_id() {
         text_elements: Vec::new(),
     }];
     let err = sess
-        .steer_input(steer_input, Some("different-turn-id"), None)
+        .steer_input(
+            steer_input,
+            Some("different-turn-id"),
+            /*client_metadata*/ None,
+        )
         .await
         .expect_err("mismatched expected turn id should fail");
 
@@ -4708,7 +4714,11 @@ async fn steer_input_rejects_non_regular_turns() {
             text_elements: Vec::new(),
         }];
         let err = sess
-            .steer_input(steer_input, /*expected_turn_id*/ None, None)
+            .steer_input(
+                steer_input,
+                /*expected_turn_id*/ None,
+                /*client_metadata*/ None,
+            )
             .await
             .expect_err("steering a non-regular turn should fail");
 
@@ -4740,7 +4750,7 @@ async fn steer_input_returns_active_turn_id() {
         text_elements: Vec::new(),
     }];
     let turn_id = sess
-        .steer_input(steer_input, Some(&tc.sub_id), None)
+        .steer_input(steer_input, Some(&tc.sub_id), /*client_metadata*/ None)
         .await
         .expect("steering with matching expected turn id should succeed");
 
