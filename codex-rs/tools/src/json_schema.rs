@@ -227,10 +227,6 @@ fn sanitize_json_schema(value: &mut JsonValue) {
                 return;
             }
 
-            if schema_type.is_none() && map.contains_key("anyOf") {
-                return;
-            }
-
             if schema_type.is_none() {
                 if map.contains_key("properties")
                     || map.contains_key("required")
@@ -239,6 +235,8 @@ fn sanitize_json_schema(value: &mut JsonValue) {
                     schema_type = Some("object".to_string());
                 } else if map.contains_key("items") || map.contains_key("prefixItems") {
                     schema_type = Some("array".to_string());
+                } else if map.contains_key("anyOf") {
+                    return;
                 } else if map.contains_key("enum") || map.contains_key("format") {
                     schema_type = infer_enum_type(map.get("enum").and_then(JsonValue::as_array))
                         .map(schema_type_name)
