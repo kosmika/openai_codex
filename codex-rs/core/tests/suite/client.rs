@@ -985,6 +985,7 @@ async fn omits_explicit_null_base_instructions_from_request() {
                 text_elements: Vec::new(),
             }],
             final_output_json_schema: None,
+            responsesapi_client_metadata: None,
         })
         .await
         .unwrap();
