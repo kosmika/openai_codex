@@ -43,10 +43,8 @@ pub trait ExecutorFileSystem: Send + Sync {
     async fn read_file_with_sandbox_policy(
         &self,
         path: &AbsolutePathBuf,
-        _sandbox_policy: Option<&SandboxPolicy>,
-    ) -> FileSystemResult<Vec<u8>> {
-        self.read_file(path).await
-    }
+        sandbox_policy: Option<&SandboxPolicy>,
+    ) -> FileSystemResult<Vec<u8>>;
 
     async fn write_file(&self, path: &AbsolutePathBuf, contents: Vec<u8>) -> FileSystemResult<()>;
 
@@ -54,10 +52,8 @@ pub trait ExecutorFileSystem: Send + Sync {
         &self,
         path: &AbsolutePathBuf,
         contents: Vec<u8>,
-        _sandbox_policy: Option<&SandboxPolicy>,
-    ) -> FileSystemResult<()> {
-        self.write_file(path, contents).await
-    }
+        sandbox_policy: Option<&SandboxPolicy>,
+    ) -> FileSystemResult<()>;
 
     async fn create_directory(
         &self,
@@ -69,20 +65,16 @@ pub trait ExecutorFileSystem: Send + Sync {
         &self,
         path: &AbsolutePathBuf,
         create_directory_options: CreateDirectoryOptions,
-        _sandbox_policy: Option<&SandboxPolicy>,
-    ) -> FileSystemResult<()> {
-        self.create_directory(path, create_directory_options).await
-    }
+        sandbox_policy: Option<&SandboxPolicy>,
+    ) -> FileSystemResult<()>;
 
     async fn get_metadata(&self, path: &AbsolutePathBuf) -> FileSystemResult<FileMetadata>;
 
     async fn get_metadata_with_sandbox_policy(
         &self,
         path: &AbsolutePathBuf,
-        _sandbox_policy: Option<&SandboxPolicy>,
-    ) -> FileSystemResult<FileMetadata> {
-        self.get_metadata(path).await
-    }
+        sandbox_policy: Option<&SandboxPolicy>,
+    ) -> FileSystemResult<FileMetadata>;
 
     async fn read_directory(
         &self,
@@ -92,10 +84,8 @@ pub trait ExecutorFileSystem: Send + Sync {
     async fn read_directory_with_sandbox_policy(
         &self,
         path: &AbsolutePathBuf,
-        _sandbox_policy: Option<&SandboxPolicy>,
-    ) -> FileSystemResult<Vec<ReadDirectoryEntry>> {
-        self.read_directory(path).await
-    }
+        sandbox_policy: Option<&SandboxPolicy>,
+    ) -> FileSystemResult<Vec<ReadDirectoryEntry>>;
 
     async fn remove(&self, path: &AbsolutePathBuf, options: RemoveOptions) -> FileSystemResult<()>;
 
@@ -103,10 +93,8 @@ pub trait ExecutorFileSystem: Send + Sync {
         &self,
         path: &AbsolutePathBuf,
         remove_options: RemoveOptions,
-        _sandbox_policy: Option<&SandboxPolicy>,
-    ) -> FileSystemResult<()> {
-        self.remove(path, remove_options).await
-    }
+        sandbox_policy: Option<&SandboxPolicy>,
+    ) -> FileSystemResult<()>;
 
     async fn copy(
         &self,
@@ -120,8 +108,6 @@ pub trait ExecutorFileSystem: Send + Sync {
         source_path: &AbsolutePathBuf,
         destination_path: &AbsolutePathBuf,
         copy_options: CopyOptions,
-        _sandbox_policy: Option<&SandboxPolicy>,
-    ) -> FileSystemResult<()> {
-        self.copy(source_path, destination_path, copy_options).await
-    }
+        sandbox_policy: Option<&SandboxPolicy>,
+    ) -> FileSystemResult<()>;
 }
