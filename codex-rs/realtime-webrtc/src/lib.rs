@@ -3,6 +3,8 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
 use libwebrtc::MediaType;
+use libwebrtc::audio_track::RtcAudioTrack;
+use libwebrtc::media_stream_track::MediaStreamTrack;
 use libwebrtc::peer_connection::OfferOptions;
 use libwebrtc::peer_connection::PeerConnection;
 use libwebrtc::peer_connection_factory::PeerConnectionFactory;
@@ -13,7 +15,6 @@ use libwebrtc::rtp_transceiver::RtpTransceiverDirection;
 use libwebrtc::rtp_transceiver::RtpTransceiverInit;
 use libwebrtc::session_description::SdpType;
 use libwebrtc::session_description::SessionDescription;
-use libwebrtc::{audio_track::RtcAudioTrack, media_stream_track::MediaStreamTrack};
 use thiserror::Error;
 use tracing::debug;
 use tracing::info;
