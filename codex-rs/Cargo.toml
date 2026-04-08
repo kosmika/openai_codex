@@ -48,6 +48,7 @@ members = [
     "ollama",
     "process-hardening",
     "protocol",
+    "realtime-webrtc",
     "rollout",
     "rmcp-client",
     "responses-api-proxy",
@@ -149,6 +150,7 @@ codex-otel = { path = "otel" }
 codex-plugin = { path = "plugin" }
 codex-process-hardening = { path = "process-hardening" }
 codex-protocol = { path = "protocol" }
+codex-realtime-webrtc = { path = "realtime-webrtc" }
 codex-responses-api-proxy = { path = "responses-api-proxy" }
 codex-response-debug-context = { path = "response-debug-context" }
 codex-rmcp-client = { path = "rmcp-client" }
@@ -245,6 +247,7 @@ jsonwebtoken = "9.3.1"
 keyring = { version = "3.6", default-features = false }
 landlock = "0.4.4"
 lazy_static = "1"
+libwebrtc = "0.3.26"
 libc = "0.2.182"
 log = "0.4"
 lru = "0.16.3"
@@ -428,6 +431,8 @@ crossterm = { git = "https://github.com/nornagon/crossterm", branch = "nornagon/
 ratatui = { git = "https://github.com/nornagon/ratatui", branch = "nornagon-v0.29.0-patch" }
 tokio-tungstenite = { git = "https://github.com/openai-oss-forks/tokio-tungstenite", rev = "132f5b39c862e3a970f731d709608b3e6276d5f6" }
 tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "9200079d3b54a1ff51072e24d81fd354f085156f" }
+libwebrtc = { git = "https://github.com/juberti-oai/rust-sdks.git", rev = "e2d1d1d230c6fc9df171ccb181423f957bb3c1f0" }
+webrtc-sys = { git = "https://github.com/juberti-oai/rust-sdks.git", rev = "e2d1d1d230c6fc9df171ccb181423f957bb3c1f0" }
 
 # Uncomment to debug local changes.
 # rmcp = { path = "../../rust-sdk/crates/rmcp" }

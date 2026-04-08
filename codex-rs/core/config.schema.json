@@ -1472,6 +1472,9 @@
     "RealtimeToml": {
       "additionalProperties": false,
       "properties": {
+        "transport": {
+          "$ref": "#/definitions/RealtimeTransport"
+        },
         "type": {
           "$ref": "#/definitions/RealtimeWsMode"
         },
@@ -1480,6 +1483,13 @@
         }
       },
       "type": "object"
+    },
+    "RealtimeTransport": {
+      "enum": [
+        "websocket",
+        "webrtc"
+      ],
+      "type": "string"
     },
     "RealtimeWsMode": {
       "enum": [
@@ -2529,7 +2539,7 @@
         }
       ],
       "default": null,
-      "description": "Experimental / do not use. Realtime websocket session selection. `version` controls v1/v2 and `type` controls conversational/transcription."
+      "description": "Experimental / do not use. Realtime session selection. `transport` controls websocket/WebRTC, `version` controls v1/v2, and `type` controls conversational/transcription."
     },
     "review_model": {
       "description": "Review model override used by the `/review` feature.",

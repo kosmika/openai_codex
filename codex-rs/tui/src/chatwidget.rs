@@ -92,6 +92,7 @@ use codex_app_server_protocol::TurnCompletedNotification;
 use codex_app_server_protocol::TurnPlanStepStatus;
 use codex_app_server_protocol::TurnStatus;
 use codex_chatgpt::connectors;
+use codex_config::config_toml::RealtimeTransport;
 use codex_config::types::ApprovalsReviewer;
 use codex_config::types::Notifications;
 use codex_config::types::WindowsSandboxModeToml;
@@ -1658,7 +1659,11 @@ impl ChatWidget {
     }
 
     fn realtime_audio_device_selection_enabled(&self) -> bool {
-        self.realtime_conversation_enabled()
+        false
+    }
+
+    fn realtime_webrtc_media_enabled(&self) -> bool {
+        self.config.realtime.transport == RealtimeTransport::Webrtc
     }
 
     /// Synchronize the bottom-pane "task running" indicator with the current lifecycles.
@@ -7021,7 +7026,12 @@ impl ChatWidget {
                     self.on_realtime_conversation_started(ev);
                 }
             }
-            EventMsg::RealtimeConversationSdp(_) => {}
+            EventMsg::RealtimeConversationSdp(ev) => {
+                if !from_replay && self.realtime_webrtc_media_enabled() {
+                    self.app_event_tx
+                        .send(AppEvent::RealtimeWebrtcSdp { sdp: ev.sdp });
+                }
+            }
             EventMsg::RealtimeConversationRealtime(ev) => {
                 if !from_replay {
                     self.on_realtime_conversation_realtime(ev);

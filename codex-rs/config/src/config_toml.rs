@@ -285,8 +285,9 @@ pub struct ConfigToml {
     /// Experimental / do not use. Selects the realtime websocket model/snapshot
     /// used for the `Op::RealtimeConversation` connection.
     pub experimental_realtime_ws_model: Option<String>,
-    /// Experimental / do not use. Realtime websocket session selection.
-    /// `version` controls v1/v2 and `type` controls conversational/transcription.
+    /// Experimental / do not use. Realtime session selection.
+    /// `transport` controls websocket/WebRTC, `version` controls v1/v2, and `type`
+    /// controls conversational/transcription.
     #[serde(default)]
     pub realtime: Option<RealtimeToml>,
     /// Experimental / do not use. Overrides only the realtime conversation
@@ -447,12 +448,21 @@ pub enum RealtimeWsMode {
 
 pub use codex_protocol::protocol::RealtimeConversationVersion as RealtimeWsVersion;
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum RealtimeTransport {
+    #[default]
+    Websocket,
+    Webrtc,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct RealtimeConfig {
     pub version: RealtimeWsVersion,
     #[serde(rename = "type")]
     pub session_type: RealtimeWsMode,
+    pub transport: RealtimeTransport,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, JsonSchema)]
@@ -461,6 +471,7 @@ pub struct RealtimeToml {
     pub version: Option<RealtimeWsVersion>,
     #[serde(rename = "type")]
     pub session_type: Option<RealtimeWsMode>,
+    pub transport: Option<RealtimeTransport>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, JsonSchema)]

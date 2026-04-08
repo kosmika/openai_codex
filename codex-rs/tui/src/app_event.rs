@@ -324,6 +324,14 @@ pub(crate) enum AppEvent {
         kind: RealtimeAudioDeviceKind,
     },
 
+    /// Apply the SDP answer for the native realtime WebRTC media session.
+    RealtimeWebrtcSdp {
+        sdp: String,
+    },
+
+    /// Close the native realtime WebRTC media session without submitting another server command.
+    RealtimeWebrtcClose,
+
     /// Open the reasoning selection popup after picking a model.
     OpenReasoningPopup {
         model: ModelPreset,

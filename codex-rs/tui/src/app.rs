@@ -83,6 +83,7 @@ use codex_app_server_protocol::ThreadRollbackResponse;
 use codex_app_server_protocol::Turn;
 use codex_app_server_protocol::TurnError as AppServerTurnError;
 use codex_app_server_protocol::TurnStatus;
+use codex_config::config_toml::RealtimeTransport;
 use codex_config::types::ApprovalsReviewer;
 use codex_config::types::ModelAvailabilityNuxConfig;
 use codex_core::append_message_history_entry;
@@ -110,6 +111,8 @@ use codex_protocol::openai_models::ModelPreset;
 use codex_protocol::openai_models::ModelUpgrade;
 use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
 use codex_protocol::protocol::AskForApproval;
+use codex_protocol::protocol::ConversationStartParams;
+use codex_protocol::protocol::ConversationStartTransport;
 use codex_protocol::protocol::FinalOutput;
 use codex_protocol::protocol::GetHistoryEntryResponseEvent;
 use codex_protocol::protocol::ListSkillsResponseEvent;
@@ -121,6 +124,7 @@ use codex_protocol::protocol::SandboxPolicy;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::protocol::SkillErrorInfo;
 use codex_protocol::protocol::TokenUsage;
+use codex_realtime_webrtc::RealtimeWebrtcMediaSession;
 use codex_terminal_detection::user_agent;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use color_eyre::eyre::Result;
@@ -1005,6 +1009,7 @@ pub(crate) struct App {
     primary_session_configured: Option<ThreadSessionState>,
     pending_primary_events: VecDeque<ThreadBufferedEvent>,
     pending_app_server_requests: PendingAppServerRequests,
+    realtime_webrtc_media: Option<RealtimeWebrtcMediaSession>,
 }
 
 #[derive(Default)]
@@ -2369,9 +2374,10 @@ impl App {
                 Ok(true)
             }
             AppCommandView::RealtimeConversationStart(params) => {
-                app_server
-                    .thread_realtime_start(thread_id, params.clone())
+                let params = self
+                    .prepare_realtime_conversation_start_params(params)
                     .await?;
+                app_server.thread_realtime_start(thread_id, params).await?;
                 Ok(true)
             }
             AppCommandView::RealtimeConversationAudio(params) => {
@@ -2387,6 +2393,7 @@ impl App {
                 Ok(true)
             }
             AppCommandView::RealtimeConversationClose => {
+                self.close_realtime_webrtc_media();
                 app_server.thread_realtime_stop(thread_id).await?;
                 Ok(true)
             }
@@ -2402,6 +2409,42 @@ impl App {
             }
             AppCommandView::OverrideTurnContext { .. } => Ok(true),
             _ => Ok(false),
+        }
+    }
+
+    async fn prepare_realtime_conversation_start_params(
+        &mut self,
+        params: &ConversationStartParams,
+    ) -> Result<ConversationStartParams> {
+        if self.config.realtime.transport != RealtimeTransport::Webrtc {
+            return Ok(params.clone());
+        }
+
+        self.close_realtime_webrtc_media();
+        let (media, sdp) = RealtimeWebrtcMediaSession::create_offer().await?;
+        self.realtime_webrtc_media = Some(media);
+
+        let mut params = params.clone();
+        params.transport = Some(ConversationStartTransport::Webrtc { sdp });
+        Ok(params)
+    }
+
+    async fn accept_realtime_webrtc_sdp(&mut self, sdp: String) {
+        let Some(media) = &self.realtime_webrtc_media else {
+            tracing::warn!("received realtime WebRTC answer without a pending media session");
+            return;
+        };
+
+        if let Err(err) = media.accept_answer(&sdp).await {
+            self.close_realtime_webrtc_media();
+            self.chat_widget
+                .add_error_message(format!("Failed to accept realtime WebRTC answer: {err}"));
+        }
+    }
+
+    fn close_realtime_webrtc_media(&mut self) {
+        if let Some(media) = self.realtime_webrtc_media.take() {
+            media.close();
         }
     }
 
@@ -3798,6 +3841,7 @@ impl App {
             primary_session_configured: None,
             pending_primary_events: VecDeque::new(),
             pending_app_server_requests: PendingAppServerRequests::default(),
+            realtime_webrtc_media: None,
         };
         if let Some(started) = initial_started_thread {
             app.enqueue_primary_thread_session(started.session, started.turns)
@@ -5443,13 +5487,15 @@ impl App {
             AppEvent::UpdateRecordingMeter { id, text } => {
                 // Update in place to preserve the element id for subsequent frames.
                 let updated = self.chat_widget.update_recording_meter_in_place(&id, &text);
-                if updated
-                    || self
-                        .chat_widget
-                        .stop_realtime_conversation_for_deleted_meter(&id)
-                {
+                if updated {
                     tui.frame_requester().schedule_frame();
                 }
+            }
+            AppEvent::RealtimeWebrtcSdp { sdp } => {
+                self.accept_realtime_webrtc_sdp(sdp).await;
+            }
+            AppEvent::RealtimeWebrtcClose => {
+                self.close_realtime_webrtc_media();
             }
             AppEvent::StatusLineSetup { items } => {
                 let ids = items.iter().map(ToString::to_string).collect::<Vec<_>>();
@@ -6203,6 +6249,7 @@ fn mcp_inventory_maps_from_statuses(statuses: Vec<McpServerStatus>) -> McpInvent
 
 impl Drop for App {
     fn drop(&mut self) {
+        self.close_realtime_webrtc_media();
         if let Err(err) = self.chat_widget.clear_managed_terminal_title() {
             tracing::debug!(error = %err, "failed to clear terminal title on app drop");
         }
@@ -9113,6 +9160,7 @@ guardian_approval = true
             primary_session_configured: None,
             pending_primary_events: VecDeque::new(),
             pending_app_server_requests: PendingAppServerRequests::default(),
+            realtime_webrtc_media: None,
         }
     }
 
@@ -9167,6 +9215,7 @@ guardian_approval = true
                 primary_session_configured: None,
                 pending_primary_events: VecDeque::new(),
                 pending_app_server_requests: PendingAppServerRequests::default(),
+                realtime_webrtc_media: None,
             },
             rx,
             op_rx,
