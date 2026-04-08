@@ -14,6 +14,18 @@ index 74cdfd0..a37996b 100644
              add_lazy_load_so(
                  &mut builder,
                  "desktop_capturer",
+@@ -317,7 +313,8 @@ fn main() {
+     builder.define("LIVEKIT_RUST_CALLBACKS", None);
+     builder.static_crt(true);
+-
++
+-    builder.warnings(false).compile("webrtcsys-cxx");
++    builder.warnings(false).compile("webrtcsys-cxx");
++    remove_bazel_dangling_cxxbridge_symlink();
+ }
+-
++
+ #[allow(unused)]
 @@ -453,3 +450,26 @@ fn add_gio_headers(builder: &mut cc::Build) {
      let glib_path_config = glib_path_config.join("glib-2.0/include");
      builder.include(&glib_path_config);
@@ -39,5 +51,20 @@ index 74cdfd0..a37996b 100644
 +
 +    for lib_name in ["glib-2.0", "gobject-2.0", "gio-2.0"] {
 +        println!("cargo:rustc-link-lib=dylib={lib_name}");
++    }
++}
++
++fn remove_bazel_dangling_cxxbridge_symlink() {
++    let Ok(out_dir) = env::var("OUT_DIR") else {
++        return;
++    };
++    let crate_include = PathBuf::from(out_dir).join("cxxbridge").join("crate").join("webrtc-sys");
++    let Ok(metadata) = std::fs::symlink_metadata(&crate_include) else {
++        return;
++    };
++    if metadata.file_type().is_symlink() {
++        std::fs::remove_file(&crate_include).unwrap_or_else(|err| {
++            panic!("failed to remove generated cxxbridge symlink {}: {err}", crate_include.display())
++        });
 +    }
 +}

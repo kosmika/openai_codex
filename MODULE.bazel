@@ -355,6 +355,23 @@ crate.annotation(
 )
 
 bazel_dep(name = "alsa_lib", version = "1.2.9.bcr.4")
+bazel_dep(name = "glib", version = "2.82.2.bcr.7")
+
+crate.annotation(
+    crate = "gio-sys",
+    gen_build_script = "off",
+    deps = ["@glib//gio"],
+)
+crate.annotation(
+    crate = "glib-sys",
+    gen_build_script = "off",
+    deps = ["@glib//glib"],
+)
+crate.annotation(
+    crate = "gobject-sys",
+    gen_build_script = "off",
+    deps = ["@glib//gobject"],
+)
 
 crate.annotation(
     crate = "alsa-sys",
@@ -363,6 +380,7 @@ crate.annotation(
 )
 
 inject_repo(crate, "alsa_lib")
+inject_repo(crate, "glib")
 
 crate.annotation(
     crate = "webrtc-sys",
