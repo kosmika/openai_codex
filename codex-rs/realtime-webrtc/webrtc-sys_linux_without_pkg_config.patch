@@ -14,19 +14,11 @@ index 74cdfd0..a37996b 100644
              add_lazy_load_so(
                  &mut builder,
                  "desktop_capturer",
-@@ -317,7 +313,8 @@ fn main() {
-     builder.define("LIVEKIT_RUST_CALLBACKS", None);
-     builder.static_crt(true);
--
-+
+@@ -320,1 +316,2 @@ fn main() {
 -    builder.warnings(false).compile("webrtcsys-cxx");
 +    builder.warnings(false).compile("webrtcsys-cxx");
 +    remove_bazel_dangling_cxxbridge_symlink();
- }
--
-+
- #[allow(unused)]
-@@ -453,3 +450,26 @@ fn add_gio_headers(builder: &mut cc::Build) {
+@@ -453,3 +450,41 @@ fn add_gio_headers(builder: &mut cc::Build) {
      let glib_path_config = glib_path_config.join("glib-2.0/include");
      builder.include(&glib_path_config);
  }
