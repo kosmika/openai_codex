@@ -1,0 +1,43 @@
+diff --git a/webrtc-sys/build.rs b/webrtc-sys/build.rs
+index 74cdfd0..a37996b 100644
+--- a/webrtc-sys/build.rs
++++ b/webrtc-sys/build.rs
+@@ -169,10 +169,6 @@ fn main() {
+             // In order to avoid any ABI mismatches we use the sysroot's headers.
+             add_gio_headers(&mut builder);
+-
+-            for lib_name in ["glib-2.0", "gobject-2.0", "gio-2.0"] {
+-                pkg_config::probe_library(lib_name).unwrap();
+-            }
+-
++            add_gio_link_flags();
+             add_lazy_load_so(
+                 &mut builder,
+                 "desktop_capturer",
+@@ -453,3 +450,26 @@ fn add_gio_headers(builder: &mut cc::Build) {
+     let glib_path_config = glib_path_config.join("glib-2.0/include");
+     builder.include(&glib_path_config);
+ }
++
++fn add_gio_link_flags() {
++    let webrtc_dir = webrtc_sys_build::webrtc_dir();
++    let target_arch = webrtc_sys_build::target_arch();
++    let target_arch_sysroot = match target_arch.as_str() {
++        "arm64" => "arm64",
++        "x64" => "amd64",
++        _ => panic!("unsupported arch"),
++    };
++    let arch_specific_path = match target_arch.as_str() {
++        "x64" => "x86_64-linux-gnu",
++        "arm64" => "aarch64-linux-gnu",
++        _ => panic!("unsupported target"),
++    };
++
++    let sysroot_path = format!("include/build/linux/debian_bullseye_{target_arch_sysroot}-sysroot");
++    let lib_path = webrtc_dir.join(sysroot_path).join("usr/lib").join(arch_specific_path);
++    println!("cargo:rustc-link-search=native={}", lib_path.display());
++
++    for lib_name in ["glib-2.0", "gobject-2.0", "gio-2.0"] {
++        println!("cargo:rustc-link-lib=dylib={lib_name}");
++    }
++}

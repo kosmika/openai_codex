@@ -364,6 +364,15 @@ crate.annotation(
 
 inject_repo(crate, "alsa_lib")
 
+crate.annotation(
+    crate = "webrtc-sys",
+    gen_build_script = "on",
+    patch_args = ["-p1"],
+    patches = [
+        "//codex-rs/realtime-webrtc:webrtc-sys_linux_without_pkg_config.patch",
+    ],
+)
+
 bazel_dep(name = "v8", version = "14.6.202.9")
 archive_override(
     module_name = "v8",

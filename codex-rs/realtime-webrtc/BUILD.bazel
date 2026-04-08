@@ -1,5 +1,7 @@
 load("//:defs.bzl", "codex_rust_crate")
 
+exports_files(["webrtc-sys_linux_without_pkg_config.patch"])
+
 codex_rust_crate(
     name = "realtime-webrtc",
     crate_name = "codex_realtime_webrtc",

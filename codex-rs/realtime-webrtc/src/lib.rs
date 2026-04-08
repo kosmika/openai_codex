@@ -8,11 +8,14 @@ use libwebrtc::peer_connection::PeerConnection;
 use libwebrtc::peer_connection_factory::PeerConnectionFactory;
 use libwebrtc::peer_connection_factory::RtcConfiguration;
 use libwebrtc::peer_connection_factory::native::PeerConnectionFactoryExt;
+use libwebrtc::rtp_sender::RtpSender;
 use libwebrtc::rtp_transceiver::RtpTransceiverDirection;
 use libwebrtc::rtp_transceiver::RtpTransceiverInit;
 use libwebrtc::session_description::SdpType;
 use libwebrtc::session_description::SessionDescription;
+use libwebrtc::{audio_track::RtcAudioTrack, media_stream_track::MediaStreamTrack};
 use thiserror::Error;
+use tracing::debug;
 use tracing::info;
 
 /// Native audio media session for a realtime WebRTC call.
@@ -22,6 +25,8 @@ use tracing::info;
 /// when it arrives.
 pub struct RealtimeWebrtcMediaSession {
     peer_connection: PeerConnection,
+    audio_sender: RtpSender,
+    local_audio_track: RtcAudioTrack,
     is_closed: Arc<AtomicBool>,
 }
 
@@ -70,28 +75,38 @@ impl RealtimeWebrtcMediaSession {
 
         let local_audio_source = factory.create_audio_source();
         let local_audio_track = factory.create_audio_track("realtime-mic", local_audio_source);
-        audio_transceiver
-            .sender()
-            .set_track(Some(local_audio_track.into()))
+        let audio_sender = audio_transceiver.sender();
+        audio_sender
+            .set_track(Some(MediaStreamTrack::from(local_audio_track.clone())))
             .map_err(|err| RealtimeWebrtcError::AttachLocalAudio(err.to_string()))?;
 
-        let offer = peer_connection
+        let session = Self {
+            peer_connection,
+            audio_sender,
+            local_audio_track,
+            is_closed: Arc::new(AtomicBool::new(false)),
+        };
+
+        let offer = session
+            .peer_connection
             .create_offer(OfferOptions {
                 ice_restart: false,
                 offer_to_receive_audio: true,
                 offer_to_receive_video: false,
             })
             .await
-            .map_err(|err| RealtimeWebrtcError::CreateOffer(err.to_string()))?;
-        peer_connection
+            .map_err(|err| {
+                session.close();
+                RealtimeWebrtcError::CreateOffer(err.to_string())
+            })?;
+        session
+            .peer_connection
             .set_local_description(offer.clone())
             .await
-            .map_err(|err| RealtimeWebrtcError::SetLocalDescription(err.to_string()))?;
-
-        let session = Self {
-            peer_connection,
-            is_closed: Arc::new(AtomicBool::new(false)),
-        };
+            .map_err(|err| {
+                session.close();
+                RealtimeWebrtcError::SetLocalDescription(err.to_string())
+            })?;
         Ok((session, offer.to_string()))
     }
 
@@ -106,6 +121,10 @@ impl RealtimeWebrtcMediaSession {
 
     pub fn close(&self) {
         if !self.is_closed.swap(true, Ordering::SeqCst) {
+            if let Err(err) = self.audio_sender.set_track(/*track*/ None) {
+                debug!("failed to detach realtime WebRTC audio track: {err}");
+            }
+            self.local_audio_track.set_enabled(false);
             self.peer_connection.close();
         }
     }
