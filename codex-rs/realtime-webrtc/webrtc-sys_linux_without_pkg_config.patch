@@ -18,7 +18,7 @@ index 74cdfd0..a37996b 100644
 -    builder.warnings(false).compile("webrtcsys-cxx");
 +    builder.warnings(false).compile("webrtcsys-cxx");
 +    remove_bazel_dangling_cxxbridge_symlinks();
-@@ -453,3 +450,47 @@ fn add_gio_headers(builder: &mut cc::Build) {
+@@ -453,3 +450,48 @@ fn add_gio_headers(builder: &mut cc::Build) {
      let glib_path_config = glib_path_config.join("glib-2.0/include");
      builder.include(&glib_path_config);
  }
@@ -54,8 +54,9 @@ index 74cdfd0..a37996b 100644
 +        PathBuf::from(&out_dir).join("cxxbridge").join("crate").join("webrtc-sys"),
 +        PathBuf::from(&out_dir).join("cxxbridge").join("include").join("rust").join("cxx.h"),
 +    ] {
-+        if let Ok(metadata) = std::fs::symlink_metadata(&cxxbridge_symlink)
-+            && metadata.file_type().is_symlink()
++        if std::fs::symlink_metadata(&cxxbridge_symlink)
++            .map(|metadata| metadata.file_type().is_symlink())
++            .unwrap_or(false)
 +        {
 +            std::fs::remove_file(&cxxbridge_symlink).unwrap_or_else(|err| {
 +                panic!(
